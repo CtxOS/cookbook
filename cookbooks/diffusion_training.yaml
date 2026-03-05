@@ -1,0 +1,28 @@
+name: diffusion_model_training
+
+model:
+  base: runwayml/stable-diffusion-v1-5
+  type: text-to-image
+  scheduler: DPMSolverMultistepScheduler
+
+dataset:
+  source: huggingface
+  name: lambdalabs/pokemon-blip-captions
+  image_column: image
+  caption_column: text
+
+training:
+  batch_size: 16
+  learning_rate: 5e-6
+  gradient_accumulation_steps: 2
+  max_train_steps: 10000
+  lr_scheduler: constant
+  lr_warmup_steps: 0
+  mixed_precision: fp16
+
+dreambooth:
+  enable: false
+  instance_prompt: "photo of sks dog"
+  class_prompt: "photo of a dog"
+  instance_data_dir: ./instance_images
+  class_data_dir: ./class_images

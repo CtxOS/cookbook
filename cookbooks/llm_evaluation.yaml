@@ -1,0 +1,38 @@
+name: llm_model_evaluation
+
+model:
+  base: meta-llama/Llama-2-7b-chat-hf
+  type: text-generation
+
+models:
+  - name: llama-7b
+    base: meta-llama/Llama-2-7b-chat-hf
+    type: text-generation
+  - name: mistral-7b
+    base: mistralai/Mistral-7B-v0.1
+    type: text-generation
+  - name: falcon-7b
+    base: tiiuae/falcon-7b
+    type: text-generation
+
+dataset:
+  source: huggingface
+  name: truthfulqa/truthful_qa
+  split: validation
+  task: multiple_choice
+
+evaluation:
+  metrics: [accuracy, bleu, rouge, bert_score]
+  benchmarks: [mmlu, hellaswag, arc_challenge]
+  
+inference:
+  max_tokens: 512
+  temperature: 0.0
+  do_sample: false
+  batch_size: 8
+
+reporting:
+  format: json
+  output_dir: ./results
+  include_perplexity: true
+  include_latency: true

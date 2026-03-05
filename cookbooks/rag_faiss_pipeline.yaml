@@ -1,0 +1,24 @@
+name: rag_faiss_pipeline
+version: 1.0
+
+environment:
+  runtime: local
+  python: 3.10
+
+model:
+  base: sentence-transformers/all-MiniLM-L6-v2
+  embedding_model: sentence-transformers/all-MiniLM-L6-v2
+  generator_model: mistralai/Mistral-7B-Instruct-v0.2
+
+dataset:
+  source: local
+  path: ./data/documents
+
+rag:
+  chunk_size: 500
+  chunk_overlap: 50
+  vector_store: faiss
+
+output:
+  index_path: ./outputs/faiss_index
+  api_server: true

@@ -1,0 +1,37 @@
+name: reinforcement_learning_agent
+
+model:
+  base: stable-baselines3/ppo
+  type: policy_gradient
+
+environment:
+  gym_env: CartPole-v1
+  type: classic_control
+  max_steps: 500
+
+dataset:
+  source: dummy
+  name: rl_dataset
+
+algorithm:
+  type: ppo
+  policy: MlpPolicy
+  learning_rate: 3e-4
+  n_steps: 2048
+  batch_size: 64
+  n_epochs: 10
+  gamma: 0.99
+  gae_lambda: 0.95
+  clip_range: 0.2
+
+training:
+  total_timesteps: 100000
+  eval_freq: 5000
+  save_freq: 10000
+  early_stopping: true
+  patience: 10
+
+evaluation:
+  n_eval_episodes: 10
+  deterministic: true
+  render: false

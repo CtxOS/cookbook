@@ -1,0 +1,13 @@
+name: rag_pipeline_basic
+
+model:
+  base: sentence-transformers/all-MiniLM-L6-v2
+  type: embedding
+
+dataset:
+  source: local
+  path: ./documents
+
+retrieval:
+  chunk_size: 512
+  overlap: 50

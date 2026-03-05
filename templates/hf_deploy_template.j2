@@ -1,0 +1,29 @@
+api_version: 1
+name: {{ recipe_name }}
+version: "1.0"
+
+environment:
+  python: "3.9"
+  cuda: "11.8"
+
+dependencies:
+  - torch
+  - transformers
+  - datasets
+  - accelerate
+  - peft
+
+model:
+  path: {{ model_path }}
+  framework: pytorch
+
+app:
+  type: gradio
+  file: app.py
+  port: 7860
+
+hardware:
+  cpu: 2
+  memory: 8Gi
+  gpu: 1
+  gpu_type: a10g

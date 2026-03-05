@@ -1,0 +1,21 @@
+name: multimodal_vision_classifier
+
+model:
+  base: openai/clip-vit-base-patch32
+  type: vision-language
+  processor: CLIPProcessor
+
+dataset:
+  source: huggingface
+  name: cifar10
+  type: image_classification
+
+training:
+  batch_size: 32
+  learning_rate: 5e-5
+  epochs: 3
+  image_size: 224
+
+evaluation:
+  metrics: [accuracy, f1_score, precision, recall]
+  test_split: 0.2

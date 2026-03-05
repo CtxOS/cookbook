@@ -1,0 +1,9 @@
+name: llm_finetune_basic
+
+model:
+  base: mistralai/Mistral-7B-v0.1
+  quantization: 4bit
+
+dataset:
+  source: huggingface
+  name: secpatch/train

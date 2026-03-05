@@ -1,0 +1,19 @@
+name: agent_builder_basic
+
+model:
+  base: gpt-3.5-turbo
+  provider: openai
+
+dataset:
+  source: dummy
+  name: agent_dataset
+
+tools:
+  - name: calculator
+    type: function
+  - name: web_search
+    type: api
+
+agent:
+  type: conversational
+  memory: true

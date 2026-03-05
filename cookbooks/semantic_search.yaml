@@ -1,0 +1,25 @@
+name: semantic_search_engine
+
+model:
+  base: sentence-transformers/all-MiniLM-L6-v2
+  type: embedding
+  dimension: 384
+
+dataset:
+  source: local
+  path: ./documents
+  format: pdf
+  chunk_size: 512
+  overlap: 50
+
+indexing:
+  engine: faiss
+  index_type: ivf_flat
+  nlist: 100
+  metric: inner_product
+
+search:
+  top_k: 10
+  similarity_threshold: 0.7
+  rerank: true
+  reranker: cross-encoder/ms-marco-MiniLM-L-6-v2

@@ -1,0 +1,27 @@
+name: voice_synthesis_tts
+
+model:
+  base: microsoft/speecht5_tts
+  type: text-to-speech
+  vocoder: microsoft/speecht5_hifigan
+  speaker_embeddings: true
+
+dataset:
+  source: huggingface
+  name: facebook/fisher_callhome_spanish
+  audio_column: audio
+  text_column: text
+  speaker_column: speaker_id
+
+training:
+  batch_size: 16
+  learning_rate: 1e-4
+  warmup_steps: 1000
+  max_train_steps: 40000
+  gradient_checkpointing: true
+
+audio:
+  sample_rate: 16000
+  max_length_in_seconds: 10
+  normalization: true
+  augmentation: true

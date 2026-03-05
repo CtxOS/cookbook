@@ -1,0 +1,29 @@
+api_version: 1
+name: llm_inference_server
+version: "1.0"
+
+environment:
+  python: "3.9"
+  cuda: "11.8"
+
+dependencies:
+  - torch
+  - transformers
+  - datasets
+  - accelerate
+  - peft
+
+model:
+  path: meta-llama/Llama-2-7b-chat-hf
+  framework: pytorch
+
+app:
+  type: gradio
+  file: app.py
+  port: 7860
+
+hardware:
+  cpu: 2
+  memory: 8Gi
+  gpu: 1
+  gpu_type: a10g

@@ -1,0 +1,31 @@
+name: graph_neural_network
+
+model:
+  base: pytorch-geometric/gcn
+  type: graph_convolutional_network
+  layers: 3
+  hidden_dim: 128
+  dropout: 0.2
+  activation: relu
+
+dataset:
+  source: torch_geometric
+  name: Cora
+  task: node_classification
+  feature_dim: 1433
+  num_classes: 7
+
+training:
+  batch_size: 1
+  learning_rate: 0.01
+  epochs: 200
+  weight_decay: 5e-4
+  early_stopping: true
+  patience: 20
+
+graph_processing:
+  normalize_features: true
+  add_self_loops: true
+  train_mask: data.train_mask
+  val_mask: data.val_mask
+  test_mask: data.test_mask

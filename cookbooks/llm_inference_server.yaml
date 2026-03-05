@@ -1,0 +1,30 @@
+name: llm_inference_server
+
+model:
+  base: meta-llama/Llama-2-7b-chat-hf
+  type: text-generation
+  quantization: 4bit
+  device_map: auto
+
+dataset:
+  source: dummy
+  name: inference_dataset
+
+server:
+  framework: fastapi
+  host: 0.0.0.0
+  port: 8000
+  workers: 2
+  timeout: 30
+
+inference:
+  max_tokens: 2048
+  temperature: 0.7
+  top_p: 0.9
+  do_sample: true
+  batch_size: 4
+
+monitoring:
+  metrics: [latency, throughput, memory_usage]
+  logging: true
+  health_check: /health

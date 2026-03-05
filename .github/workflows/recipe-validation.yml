@@ -1,0 +1,142 @@
+name: Recipe Validation
+
+on:
+  push:
+    paths:
+      - 'cookbooks/**/*.yaml'
+      - 'cookbooks/**/*.yml'
+  pull_request:
+    paths:
+      - 'cookbooks/**/*.yaml'
+      - 'cookbooks/**/*.yml'
+
+jobs:
+  validate-recipes:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.9
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .
+        pip install pyyaml
+    
+    - name: Validate all cookbook recipes
+      run: |
+        python -c "
+import sys
+from pathlib import Path
+from ctxcook.parser import load_recipe
+from ctxcook.validator import validate
+
+cookbooks_dir = Path('cookbooks')
+yaml_files = list(cookbooks_dir.glob('**/*.yaml')) + list(cookbooks_dir.glob('**/*.yml'))
+
+failed_files = []
+for yaml_file in yaml_files:
+    try:
+        recipe = load_recipe(str(yaml_file))
+        validate(recipe)
+        print(f'✅ {yaml_file}')
+    except Exception as e:
+        print(f'❌ {yaml_file}: {e}')
+        failed_files.append(str(yaml_file))
+
+if failed_files:
+    print(f'Failed validation for {len(failed_files)} files:')
+    for f in failed_files:
+        print(f'  - {f}')
+    sys.exit(1)
+else:
+    print(f'✅ All {len(yaml_files)} recipes validated successfully')
+"
+    
+    - name: Test notebook generation for each recipe
+      run: |
+        python -c "
+import sys
+from pathlib import Path
+from ctxcook.parser import load_recipe
+from ctxcook.validator import validate
+from ctxcook.notebook import build_notebook
+from ctxcook.exporter import export_notebook
+import tempfile
+
+cookbooks_dir = Path('cookbooks')
+yaml_files = list(cookbooks_dir.glob('**/*.yaml')) + list(cookbooks_dir.glob('**/*.yml'))
+
+failed_files = []
+for yaml_file in yaml_files:
+    try:
+        recipe = load_recipe(str(yaml_file))
+        validate(recipe)
+        
+        # Test notebook generation
+        nb = build_notebook(recipe, 'colab')
+        
+        # Test export
+        with tempfile.NamedTemporaryFile(suffix='.ipynb', delete=False) as f:
+            export_notebook(nb, f.name)
+            print(f'✅ {yaml_file} -> notebook generated')
+            
+    except Exception as e:
+        print(f'❌ {yaml_file}: {e}')
+        failed_files.append(str(yaml_file))
+
+if failed_files:
+    print(f'Failed notebook generation for {len(failed_files)} files:')
+    for f in failed_files:
+        print(f'  - {f}')
+    sys.exit(1)
+else:
+    print(f'✅ Notebook generation successful for all {len(yaml_files)} recipes')
+"
+
+  schema-check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install yamllint
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y yamllint
+    
+    - name: Validate YAML syntax
+      run: |
+        yamllint cookbooks/**/*.yaml cookbooks/**/*.yml || true
+    
+    - name: Check for required fields
+      run: |
+        python -c "
+import yaml
+from pathlib import Path
+
+required_fields = ['name', 'model', 'dataset']
+cookbooks_dir = Path('cookbooks')
+yaml_files = list(cookbooks_dir.glob('**/*.yaml')) + list(cookbooks_dir.glob('**/*.yml'))
+
+missing_fields = []
+for yaml_file in yaml_files:
+    with open(yaml_file, 'r') as f:
+        try:
+            data = yaml.safe_load(f)
+            for field in required_fields:
+                if field not in data:
+                    missing_fields.append(f'{yaml_file}: missing {field}')
+        except yaml.YAMLError as e:
+            missing_fields.append(f'{yaml_file}: invalid YAML - {e}')
+
+if missing_fields:
+    for issue in missing_fields:
+        print(f'❌ {issue}')
+    exit(1)
+else:
+    print('✅ All recipes have required fields')
+"
