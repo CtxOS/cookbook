@@ -1,6 +1,11 @@
 from typing import Dict
 
-from .config import get_dependency_versions, get_dependencies_for_recipe, Environment
+from .config import (
+    Environment,
+    get_dependencies_for_recipe,
+    get_dependency_versions,
+)
+
 
 class RequirementsGenerator:
     """Generate requirements.txt files with version pinning"""
@@ -8,7 +13,9 @@ class RequirementsGenerator:
     def __init__(self):
         self.versions = get_dependency_versions()
 
-    def generate_requirements(self, recipe: dict, environment: str = "colab") -> str:
+    def generate_requirements(
+        self, recipe: dict, environment: str = "colab"
+    ) -> str:
         """Generate requirements.txt content for a specific environment"""
         try:
             env = Environment(environment.lower())

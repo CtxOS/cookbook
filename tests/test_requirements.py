@@ -1,4 +1,3 @@
-import pytest
 
 from ctxcook.requirements import RequirementsGenerator
 

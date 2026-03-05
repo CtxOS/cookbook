@@ -31,7 +31,11 @@ ENVIRONMENT_CONFIGS: Dict[Environment, EnvironmentConfig] = {
         memory_optimized=True,
         auto_install=True,
         dependencies=["torch", "transformers", "datasets"],
-        special_features=["gpu_detection", "memory_management", "auto_mounting"],
+        special_features=[
+            "gpu_detection",
+            "memory_management",
+            "auto_mounting"
+        ],
     ),
     Environment.DOCKER: EnvironmentConfig(
         name=Environment.DOCKER,
@@ -95,6 +99,7 @@ def get_dependencies_for_recipe(
 @dataclass
 class DependencyVersions:
     """Version pinning configuration"""
+
     torch: str = "2.1.0"
     transformers: str = "4.36.0"
     datasets: str = "2.15.0"

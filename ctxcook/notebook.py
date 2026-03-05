@@ -5,7 +5,8 @@ from .generator import TemplateGenerator
 
 
 def build_notebook(recipe: dict, environment: str = "colab"):
-    """Build a Jupyter notebook from a recipe dictionary using Jinja2 templates."""
+    """Build a Jupyter notebook from a recipe dictionary using Jinja2
+    templates."""
     try:
         generator = TemplateGenerator()
 

@@ -13,7 +13,8 @@ from ctxcook.validator import validate
 
 @click.group()
 def main():
-    """CtxOS AI Cookbook Engine - Convert Declarative AI Recipes → Executable Infrastructure"""
+    """CtxOS AI Cookbook Engine - Convert Declarative AI Recipes → Executable
+    Infrastructure"""
     pass
 
 
@@ -28,8 +29,12 @@ def main():
 )
 @click.option("--requirements", help="Generate requirements.txt file")
 @click.option("--dockerfile", help="Generate Dockerfile")
-@click.option("--hf-deploy", help="Generate Hugging Face deployment config")
-def build(recipe_path, output, environment, requirements, dockerfile, hf_deploy):
+@click.option(
+    "--hf-deploy", help="Generate Hugging Face deployment config"
+)
+def build(
+    recipe_path, output, environment, requirements, dockerfile, hf_deploy
+):
     """Build a notebook from a YAML recipe with enhanced options"""
     try:
         recipe = load_recipe(recipe_path)
@@ -57,7 +62,9 @@ def build(recipe_path, output, environment, requirements, dockerfile, hf_deploy)
         if hf_deploy:
             hf_content = generator.render_hf_deploy(recipe)
             Path(hf_deploy).write_text(hf_content)
-            click.echo(f"✅ Hugging Face deployment config generated: {hf_deploy}")
+            click.echo(
+                f"✅ Hugging Face deployment config generated: {hf_deploy}"
+            )
 
         # Show environment info
         env_config = get_environment_config(environment)
@@ -74,7 +81,9 @@ def build(recipe_path, output, environment, requirements, dockerfile, hf_deploy)
 @main.command()
 @click.argument("recipe_path")
 @click.option(
-    "--environment", default="colab", type=click.Choice(["colab", "docker", "local"])
+    "--environment",
+    default="colab",
+    type=click.Choice(["colab", "docker", "local"]),
 )
 def info(recipe_path, environment):
     """Show recipe information and environment configuration"""
@@ -84,9 +93,10 @@ def info(recipe_path, environment):
 
         click.echo(f"📋 Recipe: {recipe['name']}")
         click.echo(f"   Model: {recipe['model']['base']}")
-        click.echo(
-            f"   Dataset: {recipe['dataset'].get('name', recipe['dataset'].get('source', 'local'))}"
+        dataset_name = recipe["dataset"].get(
+            "name", recipe["dataset"].get("source", "local")
         )
+        click.echo(f"   Dataset: {dataset_name}")
         if recipe["model"].get("quantization"):
             click.echo(f"   Quantization: {recipe['model']['quantization']}")
 
@@ -95,7 +105,9 @@ def info(recipe_path, environment):
         click.echo(f"   Python: {env_config.python_version}")
         click.echo(f"   GPU Support: {env_config.gpu_support}")
         click.echo(f"   Auto Install: {env_config.auto_install}")
-        click.echo(f"   Special Features: {', '.join(env_config.special_features)}")
+        click.echo(
+            f"   Special Features: {', '.join(env_config.special_features)}"
+        )
 
     except Exception as e:
         click.echo(f"❌ Error: {e}", err=True)
@@ -107,7 +119,7 @@ def versions():
     """Show dependency version information"""
     req_gen = RequirementsGenerator()
     versions = req_gen.get_version_info()
-    
+
     click.echo("📦 Dependency Versions:")
     for package, version in versions.items():
         click.echo(f"   {package}: {version}")

@@ -33,8 +33,12 @@ class TemplateGenerator:
             "recipe": recipe,
             "environment": environment,
             "model_name": recipe.get("model", {}).get("base", "unknown"),
-            "dataset_name": recipe.get("dataset", {}).get("name", "local"),
-            "quantization": recipe.get("model", {}).get("quantization", "none"),
+            "dataset_name": recipe.get("dataset", {}).get(
+                "name", "local"
+            ),
+            "quantization": recipe.get("model", {}).get(
+                "quantization", "none"
+            ),
             "recipe_name": recipe.get("name", "unnamed_recipe"),
         }
 

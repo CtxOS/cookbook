@@ -1,8 +1,5 @@
-import json
 
-import pytest
 
-from ctxcook.config import Environment
 from ctxcook.generator import TemplateGenerator
 
 

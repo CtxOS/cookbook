@@ -14,7 +14,9 @@ def test_load_recipe_valid():
         "dataset": {"source": "test"},
     }
 
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".yaml", delete=False
+    ) as f:
         yaml.dump(recipe_data, f)
         temp_path = f.name
 
