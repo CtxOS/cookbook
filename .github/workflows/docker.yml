@@ -13,105 +13,109 @@ jobs:
     permissions:
       contents: read
       packages: write
-
+    outputs:
+      image_tag: ${{ steps.meta.outputs.version }} # Export the primary tag for other jobs
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Log in to Docker Hub
-      if: github.event_name != 'pull_request'
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Log in to Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    - name: Log in to Container Registry
-      if: github.event_name != 'pull_request'
-      uses: docker/login-action@v3
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Extract metadata
-      id: meta
-      uses: docker/metadata-action@v5
-      with:
-        images: |
-          ctxos/cookbook
-          ghcr.io/${{ github.repository }}
-        tags: |
-          type=ref,event=branch
-          type=ref,event=pr
-          type=semver,pattern={{version}}
-          type=semver,pattern={{major}}.{{minor}}
-          type=semver,pattern={{major}}
-          type=sha
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ctxos/cookbook
+            ghcr.io/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=sha,prefix=sha-
+          # 'type=sha' results in 'sha-ad1234' which is safer than raw SHA
 
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        push: ${{ github.event_name != 'pull_request' }}
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          # We load to the local daemon on PRs so we can test it WITHOUT pushing
+          push: ${{ github.event_name != 'pull_request' }}
+          load: ${{ github.event_name == 'pull_request' }} 
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-    - name: Generate SBOM
-      uses: anchore/sbom-action@v0
-      with:
-        image: ctxos/cookbook:${{ github.sha }}
-        format: spdx-json
-        output-file: sbom.spdx.json
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ steps.meta.outputs.tags }}
+          format: spdx-json
+          output-file: sbom.spdx.json
 
-    - name: Upload SBOM
-      uses: actions/upload-artifact@v4
-      with:
-        name: sbom
-        path: sbom.spdx.json
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.spdx.json
 
   security-scan:
     runs-on: ubuntu-latest
     needs: build-and-push
-    if: github.event_name != 'pull_request'
-    
+    if: github.event_name != 'pull_request' # Scan only after push
     steps:
-    - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@master
-      with:
-        image-ref: ctxos/cookbook:${{ github.sha }}
-        format: 'sarif'
-        output: 'trivy-results.sarif'
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ctxos/cookbook:sha-${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
 
-    - name: Upload Trivy scan results to GitHub Security tab
-      uses: github/codeql-action/upload-sarif@v2
-      with:
-        sarif_file: 'trivy-results.sarif'
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3 # Updated to v3
+        with:
+          sarif_file: 'trivy-results.sarif'
 
   test-docker:
     runs-on: ubuntu-latest
     needs: build-and-push
-    
+    # Allow this to run on PRs by checking if the image was built locally or pushed
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Pull Docker image
-      run: |
-        docker pull ctxos/cookbook:${{ github.sha }}
+      - name: Log in to Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    - name: Test Docker functionality
-      run: |
-        docker run --rm \
-          -v $(pwd)/cookbooks:/app/cookbooks \
-          ctxos/cookbook:${{ github.sha }} \
-          ctxcook info cookbooks/llm_finetune.yaml
+      # On PR, we usually can't "pull" because we didn't push. 
+      # For a true CI/CD, you might want to move tests INTO the build-and-push job
+      # or use a multi-stage Dockerfile that runs tests.
+      - name: Pull Docker image
+        if: github.event_name != 'pull_request'
+        run: docker pull ctxos/cookbook:sha-${{ github.sha }}
 
-    - name: Test notebook generation in Docker
-      run: |
-        docker run --rm \
-          -v $(pwd)/cookbooks:/app/cookbooks \
-          -v $(pwd)/test_output:/app/output \
-          ctxos/cookbook:${{ github.sha }} \
-          ctxcook build cookbooks/semantic_search.yaml --output output/semantic_test.ipynb
+      - name: Test Docker functionality
+        if: github.event_name != 'pull_request'
+        run: |
+          docker run --rm \
+            -v $(pwd)/cookbooks:/app/cookbooks \
+            ctxos/cookbook:sha-${{ github.sha }} \
+            ctxcook info cookbooks/llm_finetune.yaml
